@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Valentina</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0f0c20 0%, #1a1025 50%, #2d1b3d 100%);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #stars-container, #sakura-container, #emoji-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+            animation: twinkle var(--duration) ease-in-out infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px rgba(255, 255, 255, 1); }
+        }
+
+        .petal {
+            position: absolute;
+            top: -20px;
+            background: linear-gradient(135deg, #ffb7c5 0%, #ff8da1 100%);
+            border-radius: 15px 0px 15px 0px; 
+            box-shadow: 0 0 10px rgba(255, 183, 197, 0.5);
+            opacity: 0.8;
+            animation: fall linear forwards;
+            z-index: 2;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.9; }
+            90% { opacity: 0.9; }
+            100% { transform: translateY(110vh) translateX(var(--drift)) rotate(var(--spin)); opacity: 0; }
+        }
+
+        .floating-emoji {
+            position: absolute;
+            bottom: -100px;
+            font-size: var(--emoji-size);
+            opacity: 0;
+            animation: floatUp linear forwards;
+            z-index: 1;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 0; }
+            15% { opacity: 0.8; }
+            85% { opacity: 0.8; }
+            100% { transform: translateY(-110vh) scale(1.2) rotate(var(--rotation)); opacity: 0; }
+        }
+
+        .valentina-text {
+            font-family: 'Great Vibes', cursive;
+            font-size: 6.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255, 183, 197, 0.9), 0 0 40px rgba(216, 180, 255, 0.7), 0 0 60px rgba(169, 92, 255, 0.6);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 4s ease-in-out, transform 4s ease-out;
+            z-index: 10;
+        }
+
+        .teacher-subtitle {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #f0f0ff;
+            letter-spacing: 3px;
+            margin-top: 1rem;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(180, 140, 255, 0.6);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 3s ease-in-out, transform 3s ease-out;
+            z-index: 10;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .valentina-text { font-size: 4.5rem; }
+            .teacher-subtitle { font-size: 1.2rem; padding: 0 20px; }
+        }
+
+        .show-text {
+            opacity: 1 !important;
+            transform: scale(1) translateY(0) !important;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(15, 12, 32, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 50;
+            transition: opacity 1.5s ease;
+            cursor: pointer;
+        }
+        
+        .magic-letter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 183, 197, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(216, 180, 255, 0.2) inset;
+            transition: all 0.4s ease;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .magic-letter:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 183, 197, 0.4) inset;
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(216, 180, 255, 0.3); }
+            100% { box-shadow: 0 0 30px rgba(255, 183, 197, 0.6); }
+        }
+
+        .letter-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .letter-text {
+            color: #ffffff;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            font-weight: 300;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="relative flex items-center justify-center">
+
+    <!-- Reproductor de audio nativo -->
+    <audio id="bg-music" src="gorgeous.mp3" loop preload="auto"></audio>
+
+    <div id="stars-container"></div>
+    <div id="sakura-container"></div>
+    <div id="emoji-container"></div>
+
+    <!-- Pantalla inicial de Carta/Regalo -->
+    <div id="start-screen">
+        <div class="magic-letter">
+            <div class="letter-icon">💌</div>
+            <div class="letter-text">Para Valentina<br><span class="text-sm opacity-70">(Toca para abrir)</span></div>
+        </div>
+    </div>
+
+    <!-- Textos centrales -->
+    <div class="relative z-10 text-center flex flex-col items-center">
+        <h1 id="name-display" class="valentina-text">Valentina</h1>
+        <h2 id="subtitle-display" class="teacher-subtitle">Eres la mejor profesora</h2>
+    </div>
+
+    <script>
+        // Lista de emojis (corazones y referencias de anime)
+        const floatingEmojis = ['❤️', '💖', '✨', '🌸', '👒', '🍥'];
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars-container');
+            const numStars = 180; 
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const size = Math.random() * 2.5 + 0.5;
+                const duration = Math.random() * 3 + 1;
+
+                star.style.left = `${x}vw`;
+                star.style.top = `${y}vh`;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.setProperty('--duration', `${duration}s`);
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function createSakuraPetal() {
+            const container = document.getElementById('sakura-container');
+            const petal = document.createElement('div');
+            petal.classList.add('petal');
+            
+            const startX = Math.random() * 100;
+            const size = Math.random() * 12 + 8;
+            const duration = Math.random() * 6 + 4;
+            const drift = (Math.random() - 0.5) * 250;
+            const spin = Math.random() * 360 + 360;
+
+            petal.style.left = `${startX}vw`;
+            petal.style.width = `${size}px`;
+            petal.style.height = `${size}px`;
+            petal.style.animationDuration = `${duration}s`;
+            petal.style.setProperty('--drift', `${drift}px`);
+            petal.style.setProperty('--spin', `${spin}deg`);
+
+            container.appendChild(petal);
+            setTimeout(() => petal.remove(), duration * 1000);
+        }
+
+        function createFloatingEmoji() {
+            const container = document.getElementById('emoji-container');
+            const emojiEl = document.createElement('div');
+            emojiEl.classList.add('floating-emoji');
+            
+            const randomEmoji = floatingEmojis[Math.floor(Math.random() * floatingEmojis.length)];
+            emojiEl.innerText = randomEmoji;
+            
+            const startX = Math.random() * 90 + 5; 
+            const size = Math.random() * 2 + 1.5; // Tamaño en rem
+            const duration = Math.random() * 15 + 10; // Subida muy lenta (10 a 25 segundos)
+            const rotation = (Math.random() - 0.5) * 60; 
+
+            emojiEl.style.left = `${startX}vw`;
+            emojiEl.style.setProperty('--emoji-size', `${size}rem`);
+            emojiEl.style.animationDuration = `${duration}s`;
+            emojiEl.style.setProperty('--rotation', `${rotation}deg`);
+
+            container.appendChild(emojiEl);
+            
+            setTimeout(() => emojiEl.remove(), duration * 1000);
+        }
+
+        function startExperience() {
+            // Reproducir la música local
+            const music = document.getElementById('bg-music');
+            music.volume = 0.7; // Volumen al 70%
+            music.play().catch(error => {
+                console.log("Error al reproducir audio. Verifica que el archivo gorgeous.mp3 esté en la misma carpeta.");
+            });
+
+            // Ocultar pantalla de inicio
+            const startScreen = document.getElementById('start-screen');
+            startScreen.style.opacity = '0';
+            setTimeout(() => startScreen.style.display = 'none', 1500);
+
+            // Iniciar animaciones
+            let count = 0;
+            const burstInterval = setInterval(() => {
+                createSakuraPetal();
+                count++;
+                if (count > 40) clearInterval(burstInterval);
+            }, 80);
+
+            setInterval(createSakuraPetal, 300);
+            
+            // Generar emojis lentamente (uno cada 1.5 segundos)
+            setInterval(createFloatingEmoji, 1500); 
+
+            // Mostrar textos
+            setTimeout(() => {
+                const nameDisplay = document.getElementById('name-display');
+                nameDisplay.classList.add('show-text');
+            }, 4500);
+
+            setTimeout(() => {
+                const subtitleDisplay = document.getElementById('subtitle-display');
+                subtitleDisplay.classList.add('show-text');
+            }, 8000); 
+        }
+
+        window.onload = () => {
+            createStars();
+            const startScreen = document.getElementById('start-screen');
+            startScreen.addEventListener('click', startExperience);
+        };
+    </script>
+</body>
+</html>
