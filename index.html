@@ -3,16 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Unity Web Editor - Versión Mejorada</title>
+    <title>Mini Unity Web Editor - Prefabs y Escala</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #383838; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; }
         
         /* Barra de herramientas superior */
-        #toolbar { background-color: #282828; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; }
-        button { background-color: #444; color: white; border: 1px solid #222; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-size: 13px; transition: 0.2s;}
+        #toolbar { background-color: #282828; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; align-items: center;}
+        button { background-color: #444; color: white; border: 1px solid #222; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 13px; transition: 0.2s;}
         button:hover { background-color: #555; }
         button.active { background-color: #007acc; border-color: #005a9e; }
-        .divider { width: 1px; background-color: #555; margin: 0 5px; }
+        .divider { width: 1px; height: 25px; background-color: #555; margin: 0 5px; }
+        .btn-prefab { background-color: #2d5a27; } /* Color distinto para prefabs */
+        .btn-prefab:hover { background-color: #3d7a35; }
+        .btn-char { background-color: #9e2a2b; font-weight: bold;} /* Color para personaje */
+        .btn-char:hover { background-color: #c93839; }
 
         /* Layout principal */
         #main { display: flex; flex: 1; overflow: hidden; }
@@ -40,6 +44,7 @@
         
         input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
         select { width: 100%; background: #222; color: white; border: 1px solid #111; padding: 5px; }
+        .warning-text { font-size: 11px; color: #aaa; font-style: italic; margin-top: 5px;}
     </style>
     <!-- Importar Three.js y controles desde CDN -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -53,26 +58,27 @@
         <button id="btn-rotate" onclick="setMode('rotate')">Rotar (E)</button>
         <button id="btn-scale" onclick="setMode('scale')">Escalar (R)</button>
         <div class="divider"></div>
-        <button onclick="addShape('cube')">+ Cubo</button>
-        <button onclick="addShape('sphere')">+ Esfera</button>
-        <button onclick="addShape('rect')">+ Rectángulo</button>
-        <button onclick="addShape('pyramid')">+ Pirámide</button>
+        <button onclick="addShape('cube')">Cubo</button>
+        <button onclick="addShape('sphere')">Esfera</button>
         <div class="divider"></div>
-        <button onclick="duplicateSelected()" title="Ctrl + D">Duplicar (Ctrl+D)</button>
-        <button onclick="deleteSelected()" style="background-color: #8b0000;" title="Suprimir o Backspace">Borrar (Supr)</button>
+        <!-- Botones de Prefabs -->
+        <button class="btn-char" onclick="addPrefab('spiderman')">🕷️ Jugador (Spider-Man 1.8m)</button>
+        <button class="btn-prefab" onclick="addPrefab('table')">🪑 Mesa</button>
+        <button class="btn-prefab" onclick="addPrefab('tv')">📺 TV</button>
+        <button class="btn-prefab" onclick="addPrefab('flower')">🌻 Flor</button>
+        <div class="divider"></div>
+        <button onclick="duplicateSelected()" title="Ctrl + D">Duplicar</button>
+        <button onclick="deleteSelected()" style="background-color: #8b0000;" title="Supr">Borrar</button>
     </div>
 
     <div id="main">
-        <!-- Jerarquía -->
         <div id="hierarchy" class="panel">
             <h4 style="margin-top: 0;">Jerarquía</h4>
             <div id="hierarchy-list"></div>
         </div>
         
-        <!-- Vista 3D -->
         <div id="viewport"></div>
 
-        <!-- Inspector -->
         <div id="inspector" class="panel">
             <h4 style="margin-top: 0;">Inspector</h4>
             <div id="inspector-content" style="display: none;">
@@ -80,7 +86,6 @@
                 
                 <div class="inspector-group">
                     <div class="inspector-title">Transform</div>
-                    
                     <div class="transform-row">
                         <span class="transform-label">Position</span>
                         <div class="xyz-input">
@@ -89,7 +94,6 @@
                             <input type="number" id="pos-z" step="0.1" onchange="updateObjectFromUI()">
                         </div>
                     </div>
-                    
                     <div class="transform-row">
                         <span class="transform-label">Rotation</span>
                         <div class="xyz-input">
@@ -98,7 +102,6 @@
                             <input type="number" id="rot-z" step="1" onchange="updateObjectFromUI()">
                         </div>
                     </div>
-
                     <div class="transform-row">
                         <span class="transform-label">Scale</span>
                         <div class="xyz-input">
@@ -120,13 +123,19 @@
                         <select id="mat-texture" onchange="updateMaterialTexture()">
                             <option value="none">Ninguna (Color sólido)</option>
                             <option value="grid">Cuadrícula</option>
-                            <option value="bricks">Ladrillos Básicos</option>
+                            <option value="bricks">Ladrillos</option>
+                            <option value="wood">Madera</option>
+                            <option value="grass">Pasto</option>
+                            <option value="checker">Ajedrez</option>
                         </select>
                     </div>
                 </div>
+                <div id="prefab-warning" class="warning-text" style="display: none;">
+                    *Los materiales de los Prefabs compuestos (Jugador, Muebles) no se pueden editar globalmente aquí.
+                </div>
             </div>
             <div id="inspector-empty" style="color: #888; font-size: 13px;">
-                Selecciona un objeto para ver sus propiedades.
+                Selecciona un objeto en la vista 3D o en la jerarquía.
             </div>
         </div>
     </div>
@@ -136,7 +145,7 @@
         const objects = [];
         let objectCounter = 1;
         let selectedObject = null;
-        let generatedTextures = {}; // Almacena texturas generadas por código
+        let generatedTextures = {}; 
 
         init();
         animate();
@@ -147,96 +156,220 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x282828);
             
+            // Cámara ajustada para escala humana
             camera = new THREE.PerspectiveCamera(50, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-            camera.position.set(6, 6, 6);
-            camera.lookAt(0, 0, 0);
+            camera.position.set(4, 4, 6);
+            camera.lookAt(0, 1, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            renderer.shadowMap.enabled = true; // Sombras activadas
             viewport.appendChild(renderer.domElement);
 
-            // Luces y Grid
-            scene.add(new THREE.AmbientLight(0x505050));
+            // Luces mejoradas para ver las texturas
+            const ambientLight = new THREE.AmbientLight(0x606060);
+            scene.add(ambientLight);
+            
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(5, 10, 7.5);
+            dirLight.castShadow = true;
             scene.add(dirLight);
 
-            const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x444444);
+            // Suelo (Plano para recibir sombras)
+            const floorGeo = new THREE.PlaneGeometry(20, 20);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            // Bloqueamos el suelo para que no sea seleccionable ni interactuable
+            scene.add(floor);
+
+            const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x333333);
+            gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
             // Controles
             orbit = new THREE.OrbitControls(camera, renderer.domElement);
+            orbit.target.set(0, 1, 0);
             orbit.update();
 
             transformControl = new THREE.TransformControls(camera, renderer.domElement);
             transformControl.addEventListener('dragging-changed', (event) => orbit.enabled = !event.value);
-            // Actualizar el inspector en tiempo real mientras se arrastra el gizmo
             transformControl.addEventListener('change', () => {
                 if (selectedObject) updateInspectorValues();
             });
             scene.add(transformControl);
 
-            // Selección
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             viewport.addEventListener('mousedown', onPointerDown);
 
-            // Teclado
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('resize', onWindowResize);
 
-            // Generar texturas de prueba
             generateTextures();
         }
 
-        // --- Generador de Texturas Procedurales ---
-        // Evitamos problemas de CORS al cargar imágenes externas creando texturas con Canvas HTML5
+        // --- Generador de Texturas Procedurales Ampliado ---
         function generateTextures() {
-            // Textura Cuadrícula
-            const canvas1 = document.createElement('canvas');
-            canvas1.width = 128; canvas1.height = 128;
-            const ctx1 = canvas1.getContext('2d');
-            ctx1.fillStyle = '#ffffff'; ctx1.fillRect(0, 0, 128, 128);
-            ctx1.fillStyle = '#cccccc'; ctx1.fillRect(0, 0, 64, 64); ctx1.fillRect(64, 64, 64, 64);
-            const texGrid = new THREE.CanvasTexture(canvas1);
-            texGrid.wrapS = THREE.RepeatWrapping; texGrid.wrapT = THREE.RepeatWrapping;
-            texGrid.repeat.set(2, 2);
-            generatedTextures['grid'] = texGrid;
+            // 1. Cuadrícula y Ladrillos (Las de antes)
+            const cGrid = document.createElement('canvas'); cGrid.width=128; cGrid.height=128;
+            const ctx1 = cGrid.getContext('2d'); ctx1.fillStyle='#fff'; ctx1.fillRect(0,0,128,128); ctx1.fillStyle='#ccc'; ctx1.fillRect(0,0,64,64); ctx1.fillRect(64,64,64,64);
+            generatedTextures['grid'] = createTex(cGrid);
 
-            // Textura Ladrillos (Simulada)
-            const canvas2 = document.createElement('canvas');
-            canvas2.width = 128; canvas2.height = 128;
-            const ctx2 = canvas2.getContext('2d');
-            ctx2.fillStyle = '#a52a2a'; ctx2.fillRect(0, 0, 128, 128);
-            ctx2.fillStyle = '#dddddd'; 
-            ctx2.fillRect(0, 60, 128, 8); // horizontal
-            ctx2.fillRect(60, 0, 8, 60);  // vertical 1
-            ctx2.fillRect(20, 68, 8, 60); // vertical 2
-            const texBricks = new THREE.CanvasTexture(canvas2);
-            texBricks.wrapS = THREE.RepeatWrapping; texBricks.wrapT = THREE.RepeatWrapping;
-            texBricks.repeat.set(2, 2);
-            generatedTextures['bricks'] = texBricks;
+            const cBricks = document.createElement('canvas'); cBricks.width=128; cBricks.height=128;
+            const ctx2 = cBricks.getContext('2d'); ctx2.fillStyle='#a52a2a'; ctx2.fillRect(0,0,128,128); ctx2.fillStyle='#ddd'; ctx2.fillRect(0,60,128,8); ctx2.fillRect(60,0,8,60); ctx2.fillRect(20,68,8,60);
+            generatedTextures['bricks'] = createTex(cBricks, 3);
+
+            // 2. Madera (Líneas horizontales)
+            const cWood = document.createElement('canvas'); cWood.width=128; cWood.height=128;
+            const ctx3 = cWood.getContext('2d');
+            ctx3.fillStyle = '#8B5A2B'; ctx3.fillRect(0,0,128,128);
+            ctx3.fillStyle = '#6B4226';
+            for(let i=0; i<128; i+=4) { if(Math.random() > 0.3) { ctx3.fillRect(0, i, 128, Math.random()*2+1); } }
+            generatedTextures['wood'] = createTex(cWood);
+
+            // 3. Pasto (Verde con ruido)
+            const cGrass = document.createElement('canvas'); cGrass.width=128; cGrass.height=128;
+            const ctx4 = cGrass.getContext('2d');
+            ctx4.fillStyle = '#4CAF50'; ctx4.fillRect(0,0,128,128);
+            ctx4.fillStyle = '#388E3C';
+            for(let i=0; i<500; i++) { ctx4.fillRect(Math.random()*128, Math.random()*128, 2, 3); }
+            generatedTextures['grass'] = createTex(cGrass, 4);
+
+            // 4. Ajedrez
+            const cCheck = document.createElement('canvas'); cCheck.width=128; cCheck.height=128;
+            const ctx5 = cCheck.getContext('2d');
+            for(let x=0; x<4; x++){ for(let y=0; y<4; y++){ ctx5.fillStyle = (x+y)%2 === 0 ? '#111' : '#eee'; ctx5.fillRect(x*32, y*32, 32, 32); } }
+            generatedTextures['checker'] = createTex(cCheck);
         }
 
-        // --- Funciones de creación ---
+        function createTex(canvas, repeat = 2) {
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(repeat, repeat);
+            return tex;
+        }
+
+        // --- Creador de Figuras Simples ---
         function addShape(type) {
-            let geometry;
-            let nameBase = "";
-            
-            if (type === 'cube') { geometry = new THREE.BoxGeometry(); nameBase = "Cubo"; }
-            else if (type === 'sphere') { geometry = new THREE.SphereGeometry(0.6, 32, 16); nameBase = "Esfera"; }
-            else if (type === 'rect') { geometry = new THREE.BoxGeometry(2, 0.5, 1); nameBase = "Rectángulo"; }
-            else if (type === 'pyramid') { geometry = new THREE.ConeGeometry(0.6, 1.2, 4); nameBase = "Pirámide"; }
+            let geometry, nameBase;
+            if (type === 'cube') { geometry = new THREE.BoxGeometry(1, 1, 1); nameBase = "Cubo"; }
+            else if (type === 'sphere') { geometry = new THREE.SphereGeometry(0.5, 32, 16); nameBase = "Esfera"; }
 
             const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
             const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
             mesh.name = `${nameBase} ${objectCounter++}`;
-            mesh.position.y = type === 'rect' ? 0.25 : 0.6;
-            
-            // Aseguramos que la textura por defecto sea 'none'
+            mesh.position.y = 0.5;
+            mesh.userData.isSimple = true;
             mesh.userData.textureType = 'none';
 
             addToScene(mesh);
+        }
+
+        // --- Creador de PREFABS (Grupos de objetos) ---
+        function addPrefab(type) {
+            const group = new THREE.Group(); // Contenedor vacío
+            
+            if (type === 'spiderman') {
+                group.name = "Jugador (Spider-Man) " + objectCounter++;
+                const matRed = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
+                const matBlue = new THREE.MeshStandardMaterial({ color: 0x0000cc });
+                
+                // Unity scale: 1 unidad = 1 metro. Altura total ~ 1.8m
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.25), matRed);
+                head.position.set(0, 1.65, 0);
+                
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.6, 0.25), matRed);
+                torso.position.set(0, 1.2, 0);
+
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.9, 0.18), matBlue);
+                legL.position.set(-0.12, 0.45, 0);
+                const legR = legL.clone();
+                legR.position.set(0.12, 0.45, 0);
+
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), matBlue);
+                armL.position.set(-0.32, 1.15, 0);
+                const armR = armL.clone();
+                armR.position.set(0.32, 1.15, 0);
+
+                group.add(head, torso, legL, legR, armL, armR);
+            } 
+            else if (type === 'table') {
+                group.name = "Mesa " + objectCounter++;
+                const matWood = new THREE.MeshStandardMaterial({ map: generatedTextures['wood'] });
+                
+                // Altura estándar mesa 0.75m
+                const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.9), matWood);
+                top.position.set(0, 0.75, 0);
+                
+                const legGeo = new THREE.BoxGeometry(0.08, 0.75, 0.08);
+                const legsPositions = [[-0.7, 0.375, -0.35], [0.7, 0.375, -0.35], [-0.7, 0.375, 0.35], [0.7, 0.375, 0.35]];
+                
+                group.add(top);
+                legsPositions.forEach(pos => {
+                    const leg = new THREE.Mesh(legGeo, matWood);
+                    leg.position.set(...pos);
+                    group.add(leg);
+                });
+            }
+            else if (type === 'tv') {
+                group.name = "Televisor " + objectCounter++;
+                const matBlack = new THREE.MeshStandardMaterial({ color: 0x111111 });
+                const matScreen = new THREE.MeshStandardMaterial({ color: 0x4444ff, emissive: 0x111133 }); // Brilla un poco
+                
+                const screen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), matBlack);
+                screen.position.set(0, 0.45, 0);
+                
+                const display = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.65), matScreen);
+                display.position.set(0, 0.45, 0.026); // Ligeramente frente a la pantalla
+                
+                const stand = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.2), matBlack);
+                stand.position.set(0, 0.025, 0);
+                
+                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), matBlack);
+                neck.position.set(0, 0.08, 0);
+
+                group.add(screen, display, stand, neck);
+            }
+            else if (type === 'flower') {
+                group.name = "Maceta " + objectCounter++;
+                const matPot = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+                const matStem = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+                const matCenter = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
+                const matPetal = new THREE.MeshStandardMaterial({ color: 0xFF1493 });
+
+                const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.1, 0.3), matPot);
+                pot.position.set(0, 0.15, 0);
+
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), matStem);
+                stem.position.set(0, 0.5, 0);
+
+                const center = new THREE.Mesh(new THREE.SphereGeometry(0.08), matCenter);
+                center.position.set(0, 0.75, 0);
+
+                group.add(pot, stem, center);
+
+                // Generar pétalos en círculo
+                for(let i=0; i<6; i++) {
+                    const petal = new THREE.Mesh(new THREE.SphereGeometry(0.06), matPetal);
+                    const angle = (i / 6) * Math.PI * 2;
+                    petal.position.set(Math.cos(angle)*0.12, 0.75, Math.sin(angle)*0.12);
+                    // Aplanar el pétalo un poco
+                    petal.scale.set(1, 0.2, 1);
+                    petal.lookAt(0, 0.75, 0);
+                    group.add(petal);
+                }
+            }
+
+            // Habilitar sombras para todos los hijos del prefab
+            group.children.forEach(child => { child.castShadow = true; });
+            group.userData.isPrefab = true; // Etiqueta para saber que es un grupo al seleccionarlo
+
+            // Colocar prefabs en el centro de la vista
+            group.position.set(0, 0, 0);
+            addToScene(group);
         }
 
         function addToScene(object) {
@@ -246,68 +379,7 @@
             selectObject(object);
         }
 
-        // --- Atajos de Teclado (Borrar / Duplicar) ---
-        function onKeyDown(event) {
-            const key = event.key.toLowerCase();
-            
-            // Prevenir atajos si estamos escribiendo en los inputs del inspector
-            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
-
-            if (key === 'w') setMode('translate');
-            if (key === 'e') setMode('rotate');
-            if (key === 'r') setMode('scale');
-            
-            if (event.key === 'Delete' || event.key === 'Backspace') {
-                deleteSelected();
-            }
-            
-            if (key === 'd' && event.ctrlKey) {
-                event.preventDefault(); // Evita que el navegador abra marcadores
-                duplicateSelected();
-            }
-        }
-
-        function deleteSelected() {
-            if (!selectedObject) return;
-            
-            // Quitar de los controles
-            transformControl.detach();
-            
-            // Quitar de la escena
-            scene.remove(selectedObject);
-            
-            // Liberar memoria de geometría y material
-            if (selectedObject.geometry) selectedObject.geometry.dispose();
-            if (selectedObject.material) selectedObject.material.dispose();
-            
-            // Quitar del array
-            const index = objects.indexOf(selectedObject);
-            if (index > -1) objects.splice(index, 1);
-            
-            selectedObject = null;
-            updateHierarchy();
-            updateInspectorUI();
-        }
-
-        function duplicateSelected() {
-            if (!selectedObject) return;
-            
-            const clone = selectedObject.clone();
-            clone.name = selectedObject.name + " (Copia)";
-            
-            // Clonar material para que cambiar color a uno no afecte al otro
-            if (clone.material) {
-                clone.material = selectedObject.material.clone();
-            }
-            
-            // Desplazar ligeramente para que se note
-            clone.position.x += 0.5;
-            clone.position.z += 0.5;
-            
-            addToScene(clone);
-        }
-
-        // --- Lógica de Selección e Interfaz ---
+        // --- Interacción y Raycaster Actualizado para Prefabs ---
         function onPointerDown(event) {
             if(transformControl.axis !== null) return; 
 
@@ -316,10 +388,18 @@
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects, false);
+            
+            // Buscar intersección con todos los hijos también (recursive = true)
+            const intersects = raycaster.intersectObjects(objects, true);
 
             if (intersects.length > 0) {
-                selectObject(intersects[0].object);
+                let hitObject = intersects[0].object;
+                
+                // Si lo que tocamos es parte de un Prefab (Grupo), seleccionamos el padre (el Prefab completo)
+                while(hitObject.parent && hitObject.parent.type === "Group") {
+                    hitObject = hitObject.parent;
+                }
+                selectObject(hitObject);
             } else {
                 deselectAll();
             }
@@ -339,30 +419,77 @@
             updateInspectorUI();
         }
 
+        // ... (El resto de funciones de teclado, borrar y UI se mantienen iguales) ...
+        function onKeyDown(event) {
+            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
+            const key = event.key.toLowerCase();
+            if (key === 'w') setMode('translate');
+            if (key === 'e') setMode('rotate');
+            if (key === 'r') setMode('scale');
+            if (event.key === 'Delete' || event.key === 'Backspace') deleteSelected();
+            if (key === 'd' && event.ctrlKey) { event.preventDefault(); duplicateSelected(); }
+        }
+
         function setMode(mode) {
             transformControl.setMode(mode);
             ['translate', 'rotate', 'scale'].forEach(m => document.getElementById('btn-' + m).classList.remove('active'));
             document.getElementById('btn-' + mode).classList.add('active');
         }
 
-        // --- Lógica del Inspector (Lado Derecho) ---
+        function deleteSelected() {
+            if (!selectedObject) return;
+            transformControl.detach();
+            scene.remove(selectedObject);
+            
+            // Limpieza de memoria (Si es un grupo, limpia a los hijos)
+            if(selectedObject.userData.isPrefab) {
+                selectedObject.children.forEach(c => {
+                    if (c.geometry) c.geometry.dispose();
+                    if (c.material) c.material.dispose();
+                });
+            } else {
+                if (selectedObject.geometry) selectedObject.geometry.dispose();
+                if (selectedObject.material) selectedObject.material.dispose();
+            }
+            
+            const index = objects.indexOf(selectedObject);
+            if (index > -1) objects.splice(index, 1);
+            selectedObject = null;
+            updateHierarchy();
+            updateInspectorUI();
+        }
+
+        function duplicateSelected() {
+            if (!selectedObject) return;
+            const clone = selectedObject.clone();
+            clone.name = selectedObject.name + " (Copia)";
+            
+            if (clone.userData.isSimple && clone.material) { clone.material = selectedObject.material.clone(); }
+            
+            clone.position.x += 1;
+            addToScene(clone);
+        }
+
         function updateInspectorUI() {
             const content = document.getElementById('inspector-content');
             const empty = document.getElementById('inspector-empty');
             const matGroup = document.getElementById('material-group');
+            const warning = document.getElementById('prefab-warning');
 
             if (selectedObject) {
                 content.style.display = 'block';
                 empty.style.display = 'none';
                 document.getElementById('ins-name').textContent = selectedObject.name;
                 
-                // Mostrar panel de materiales solo si el objeto tiene material
-                if (selectedObject.material) {
+                // Mostrar panel de materiales SÓLO si es figura simple. Los Prefabs tienen muchos materiales mezclados.
+                if (selectedObject.userData.isSimple && selectedObject.material) {
                     matGroup.style.display = 'block';
+                    warning.style.display = 'none';
                     document.getElementById('mat-color').value = '#' + selectedObject.material.color.getHexString();
                     document.getElementById('mat-texture').value = selectedObject.userData.textureType || 'none';
-                } else {
+                } else if (selectedObject.userData.isPrefab) {
                     matGroup.style.display = 'none';
+                    warning.style.display = 'block'; // Aviso de que no se puede editar color de prefab aquí
                 }
 
                 updateInspectorValues();
@@ -374,18 +501,12 @@
 
         function updateInspectorValues() {
             if (!selectedObject) return;
-            
-            // Posición
             document.getElementById('pos-x').value = selectedObject.position.x.toFixed(2);
             document.getElementById('pos-y').value = selectedObject.position.y.toFixed(2);
             document.getElementById('pos-z').value = selectedObject.position.z.toFixed(2);
-
-            // Rotación (Convertimos de Radianes de Three.js a Grados estilo Unity)
             document.getElementById('rot-x').value = THREE.MathUtils.radToDeg(selectedObject.rotation.x).toFixed(1);
             document.getElementById('rot-y').value = THREE.MathUtils.radToDeg(selectedObject.rotation.y).toFixed(1);
             document.getElementById('rot-z').value = THREE.MathUtils.radToDeg(selectedObject.rotation.z).toFixed(1);
-
-            // Escala
             document.getElementById('sca-x').value = selectedObject.scale.x.toFixed(2);
             document.getElementById('sca-y').value = selectedObject.scale.y.toFixed(2);
             document.getElementById('sca-z').value = selectedObject.scale.z.toFixed(2);
@@ -393,22 +514,16 @@
 
         function updateObjectFromUI() {
             if (!selectedObject) return;
-
-            // Leer inputs de Posición
             selectedObject.position.set(
                 parseFloat(document.getElementById('pos-x').value),
                 parseFloat(document.getElementById('pos-y').value),
                 parseFloat(document.getElementById('pos-z').value)
             );
-
-            // Leer inputs de Rotación (Convertimos Grados a Radianes)
             selectedObject.rotation.set(
                 THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-x').value)),
                 THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-y').value)),
                 THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-z').value))
             );
-
-            // Leer inputs de Escala
             selectedObject.scale.set(
                 parseFloat(document.getElementById('sca-x').value),
                 parseFloat(document.getElementById('sca-y').value),
@@ -417,27 +532,20 @@
         }
 
         function updateMaterialColor() {
-            if (selectedObject && selectedObject.material) {
-                const hex = document.getElementById('mat-color').value;
-                selectedObject.material.color.set(hex);
+            if (selectedObject && selectedObject.userData.isSimple) {
+                selectedObject.material.color.set(document.getElementById('mat-color').value);
             }
         }
 
         function updateMaterialTexture() {
-            if (selectedObject && selectedObject.material) {
+            if (selectedObject && selectedObject.userData.isSimple) {
                 const type = document.getElementById('mat-texture').value;
                 selectedObject.userData.textureType = type;
-
-                if (type === 'none') {
-                    selectedObject.material.map = null;
-                } else {
-                    selectedObject.material.map = generatedTextures[type];
-                }
+                selectedObject.material.map = type === 'none' ? null : generatedTextures[type];
                 selectedObject.material.needsUpdate = true;
             }
         }
 
-        // --- Lógica de Jerarquía (UI Lateral) ---
         function updateHierarchy() {
             const list = document.getElementById('hierarchy-list');
             list.innerHTML = '';
@@ -452,16 +560,12 @@
         }
 
         function updateHierarchySelection(selectedObj) {
-            const items = document.querySelectorAll('.hierarchy-item');
-            items.forEach(item => {
+            document.querySelectorAll('.hierarchy-item').forEach(item => {
                 item.classList.remove('selected');
-                if (selectedObj && item.dataset.uuid === selectedObj.uuid) {
-                    item.classList.add('selected');
-                }
+                if (selectedObj && item.dataset.uuid === selectedObj.uuid) item.classList.add('selected');
             });
         }
 
-        // --- Render Loop ---
         function onWindowResize() {
             const viewport = document.getElementById('viewport');
             camera.aspect = viewport.clientWidth / viewport.clientHeight;
