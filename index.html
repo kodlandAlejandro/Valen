@@ -3,50 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Unity Web Editor - Prefabs y Escala</title>
+    <title>Mini Unity Web Editor - Expandido</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #383838; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; }
         
         /* Barra de herramientas superior */
-        #toolbar { background-color: #282828; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; align-items: center;}
-        button { background-color: #444; color: white; border: 1px solid #222; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 13px; transition: 0.2s;}
+        #toolbar { background-color: #282828; padding: 8px 15px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; align-items: center;}
+        button { background-color: #444; color: white; border: 1px solid #222; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-size: 13px; transition: 0.2s;}
         button:hover { background-color: #555; }
         button.active { background-color: #007acc; border-color: #005a9e; }
         .divider { width: 1px; height: 25px; background-color: #555; margin: 0 5px; }
-        .btn-prefab { background-color: #2d5a27; } /* Color distinto para prefabs */
-        .btn-prefab:hover { background-color: #3d7a35; }
-        .btn-char { background-color: #9e2a2b; font-weight: bold;} /* Color para personaje */
-        .btn-char:hover { background-color: #c93839; }
+        
+        /* Menús Desplegables */
+        .dropdown { position: relative; display: inline-block; }
+        .dropbtn { display: flex; align-items: center; gap: 5px; background-color: #3a3a3a; font-weight: 500; }
+        .dropdown-content { display: none; position: absolute; background-color: #2d2d2d; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5); z-index: 100; border: 1px solid #111; border-radius: 0 0 4px 4px; overflow: hidden;}
+        .dropdown-content button { color: #ccc; padding: 10px 15px; display: block; width: 100%; text-align: left; border: none; border-bottom: 1px solid #3a3a3a; background: transparent; border-radius: 0; }
+        .dropdown-content button:last-child { border-bottom: none; }
+        .dropdown-content button:hover { background-color: #007acc; color: white; padding-left: 20px; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown:hover .dropbtn { background-color: #4a4a4a; }
 
         /* Layout principal */
         #main { display: flex; flex: 1; overflow: hidden; }
         
         /* Paneles laterales */
-        .panel { width: 260px; background-color: #333; padding: 10px; overflow-y: auto; box-sizing: border-box; }
+        .panel { width: 260px; background-color: #333; padding: 15px; overflow-y: auto; box-sizing: border-box; }
         #hierarchy { border-right: 1px solid #1a1a1a; }
         #inspector { border-left: 1px solid #1a1a1a; }
         
-        .hierarchy-item { padding: 5px; cursor: pointer; margin-bottom: 2px; border-radius: 3px; font-size: 14px; }
-        .hierarchy-item:hover { background-color: #444; }
-        .hierarchy-item.selected { background-color: #007acc; }
+        .hierarchy-item { padding: 6px 8px; cursor: pointer; margin-bottom: 3px; border-radius: 3px; font-size: 13px; color: #ccc; transition: background 0.1s;}
+        .hierarchy-item:hover { background-color: #4a4a4a; color: white;}
+        .hierarchy-item.selected { background-color: #007acc; color: white; font-weight: bold;}
         
         /* Vista de Escena (Centro) */
         #viewport { flex: 1; position: relative; outline: none; }
 
         /* Estilos del Inspector */
         .inspector-group { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444; }
-        .inspector-title { font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #bbb; }
-        .transform-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 12px; }
-        .transform-label { width: 60px; }
+        .inspector-title { font-weight: bold; margin-bottom: 10px; font-size: 14px; color: #00a8ff; text-transform: uppercase; letter-spacing: 0.5px;}
+        .transform-row { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; }
+        .transform-label { width: 65px; color: #aaa;}
         .xyz-input { display: flex; gap: 5px; flex: 1; }
-        .xyz-input input { width: 100%; background: #222; border: 1px solid #111; color: white; padding: 3px; border-radius: 2px; text-align: center; }
-        .xyz-input input:focus { outline: 1px solid #007acc; }
+        .xyz-input input { width: 100%; background: #222; border: 1px solid #111; color: white; padding: 4px; border-radius: 3px; text-align: center; font-family: monospace;}
+        .xyz-input input:focus { outline: 1px solid #007acc; background: #2a2a2a;}
         
-        input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
-        select { width: 100%; background: #222; color: white; border: 1px solid #111; padding: 5px; }
-        .warning-text { font-size: 11px; color: #aaa; font-style: italic; margin-top: 5px;}
+        input[type="color"] { width: 100%; height: 32px; border: none; background: none; cursor: pointer; border-radius: 3px;}
+        select { width: 100%; background: #222; color: white; border: 1px solid #111; padding: 6px; border-radius: 3px; cursor: pointer;}
+        .warning-text { font-size: 11px; color: #ff9d00; font-style: italic; margin-top: 10px; background: rgba(255, 157, 0, 0.1); padding: 8px; border-radius: 3px;}
     </style>
-    <!-- Importar Three.js y controles desde CDN -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/TransformControls.js"></script>
@@ -54,40 +59,70 @@
 <body>
 
     <div id="toolbar">
-        <button id="btn-translate" class="active" onclick="setMode('translate')">Mover (W)</button>
-        <button id="btn-rotate" onclick="setMode('rotate')">Rotar (E)</button>
-        <button id="btn-scale" onclick="setMode('scale')">Escalar (R)</button>
+        <button id="btn-translate" class="active" onclick="setMode('translate')" title="Mover (W)">⬌ Mover</button>
+        <button id="btn-rotate" onclick="setMode('rotate')" title="Rotar (E)">⟳ Rotar</button>
+        <button id="btn-scale" onclick="setMode('scale')" title="Escalar (R)">⤡ Escalar</button>
         <div class="divider"></div>
-        <button onclick="addShape('cube')">Cubo</button>
-        <button onclick="addShape('sphere')">Esfera</button>
+        
+        <!-- Menú de Formas Básicas -->
+        <div class="dropdown">
+            <button class="dropbtn">➕ Formas 3D ▼</button>
+            <div class="dropdown-content">
+                <button onclick="addShape('cube')">🧊 Cubo</button>
+                <button onclick="addShape('sphere')">⚽ Esfera</button>
+                <button onclick="addShape('cylinder')">🛢️ Cilindro</button>
+                <button onclick="addShape('cone')">🔺 Cono</button>
+            </div>
+        </div>
+
+        <!-- Menú de Personajes -->
+        <div class="dropdown">
+            <button class="dropbtn">🦸‍♂️ Personajes ▼</button>
+            <div class="dropdown-content">
+                <button onclick="addPrefab('spiderman')">🕷️ Spider-Man</button>
+                <button onclick="addPrefab('ironman')">🤖 Iron Man</button>
+                <button onclick="addPrefab('hulk')">🟩 Hulk</button>
+                <button onclick="addPrefab('batman')">🦇 Batman</button>
+            </div>
+        </div>
+
+        <!-- Menú de Entorno y Casa -->
+        <div class="dropdown">
+            <button class="dropbtn">🏠 Construcción y Muebles ▼</button>
+            <div class="dropdown-content">
+                <button onclick="addPrefab('wall')">🧱 Pared</button>
+                <button onclick="addPrefab('door')">🚪 Puerta</button>
+                <button onclick="addPrefab('window')">🪟 Ventana (Cristal)</button>
+                <button onclick="addPrefab('table')">🪑 Mesa</button>
+                <button onclick="addPrefab('chair')">🪑 Silla</button>
+                <button onclick="addPrefab('tv')">📺 Televisor</button>
+                <button onclick="addPrefab('flower')">🌻 Maceta con Flor</button>
+                <button onclick="addPrefab('tree')">🌳 Árbol</button>
+            </div>
+        </div>
+
         <div class="divider"></div>
-        <!-- Botones de Prefabs -->
-        <button class="btn-char" onclick="addPrefab('spiderman')">🕷️ Jugador (Spider-Man 1.8m)</button>
-        <button class="btn-prefab" onclick="addPrefab('table')">🪑 Mesa</button>
-        <button class="btn-prefab" onclick="addPrefab('tv')">📺 TV</button>
-        <button class="btn-prefab" onclick="addPrefab('flower')">🌻 Flor</button>
-        <div class="divider"></div>
-        <button onclick="duplicateSelected()" title="Ctrl + D">Duplicar</button>
-        <button onclick="deleteSelected()" style="background-color: #8b0000;" title="Supr">Borrar</button>
+        <button onclick="duplicateSelected()" title="Ctrl + D">📄 Duplicar</button>
+        <button onclick="deleteSelected()" style="background-color: #a83232;" title="Supr">🗑️ Borrar</button>
     </div>
 
     <div id="main">
         <div id="hierarchy" class="panel">
-            <h4 style="margin-top: 0;">Jerarquía</h4>
+            <h4 style="margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px;">Jerarquía</h4>
             <div id="hierarchy-list"></div>
         </div>
         
         <div id="viewport"></div>
 
         <div id="inspector" class="panel">
-            <h4 style="margin-top: 0;">Inspector</h4>
+            <h4 style="margin-top: 0; color: #fff; border-bottom: 1px solid #444; padding-bottom: 10px;">Inspector</h4>
             <div id="inspector-content" style="display: none;">
-                <h3 id="ins-name" style="margin-top: 0; color: #fff;">Objeto</h3>
+                <h3 id="ins-name" style="margin-top: 5px; margin-bottom: 15px; color: #fff; font-size: 16px;">Objeto</h3>
                 
                 <div class="inspector-group">
                     <div class="inspector-title">Transform</div>
                     <div class="transform-row">
-                        <span class="transform-label">Position</span>
+                        <span class="transform-label">Posición</span>
                         <div class="xyz-input">
                             <input type="number" id="pos-x" step="0.1" onchange="updateObjectFromUI()">
                             <input type="number" id="pos-y" step="0.1" onchange="updateObjectFromUI()">
@@ -95,7 +130,7 @@
                         </div>
                     </div>
                     <div class="transform-row">
-                        <span class="transform-label">Rotation</span>
+                        <span class="transform-label">Rotación</span>
                         <div class="xyz-input">
                             <input type="number" id="rot-x" step="1" onchange="updateObjectFromUI()">
                             <input type="number" id="rot-y" step="1" onchange="updateObjectFromUI()">
@@ -103,7 +138,7 @@
                         </div>
                     </div>
                     <div class="transform-row">
-                        <span class="transform-label">Scale</span>
+                        <span class="transform-label">Escala</span>
                         <div class="xyz-input">
                             <input type="number" id="sca-x" step="0.1" onchange="updateObjectFromUI()">
                             <input type="number" id="sca-y" step="0.1" onchange="updateObjectFromUI()">
@@ -113,16 +148,16 @@
                 </div>
 
                 <div class="inspector-group" id="material-group">
-                    <div class="inspector-title">Material (MeshRenderer)</div>
+                    <div class="inspector-title">Mesh Renderer</div>
                     <div class="transform-row">
-                        <span class="transform-label">Color</span>
+                        <span class="transform-label">Color Base</span>
                         <input type="color" id="mat-color" oninput="updateMaterialColor()">
                     </div>
-                    <div class="transform-row" style="margin-top: 10px;">
-                        <span class="transform-label">Textura</span>
+                    <div class="transform-row" style="margin-top: 15px;">
+                        <span class="transform-label">Material</span>
                         <select id="mat-texture" onchange="updateMaterialTexture()">
-                            <option value="none">Ninguna (Color sólido)</option>
-                            <option value="grid">Cuadrícula</option>
+                            <option value="none">Color Sólido</option>
+                            <option value="grid">Cuadrícula (Dev)</option>
                             <option value="bricks">Ladrillos</option>
                             <option value="wood">Madera</option>
                             <option value="grass">Pasto</option>
@@ -131,11 +166,11 @@
                     </div>
                 </div>
                 <div id="prefab-warning" class="warning-text" style="display: none;">
-                    *Los materiales de los Prefabs compuestos (Jugador, Muebles) no se pueden editar globalmente aquí.
+                    ⚠️ Este es un objeto compuesto (Prefab). Sus materiales individuales no pueden editarse desde aquí.
                 </div>
             </div>
-            <div id="inspector-empty" style="color: #888; font-size: 13px;">
-                Selecciona un objeto en la vista 3D o en la jerarquía.
+            <div id="inspector-empty" style="color: #888; font-size: 13px; text-align: center; margin-top: 20px;">
+                Selecciona un objeto en la escena o jerarquía para inspeccionarlo.
             </div>
         </div>
     </div>
@@ -154,38 +189,44 @@
             const viewport = document.getElementById('viewport');
 
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x282828);
+            scene.background = new THREE.Color(0x1e1e1e); // Fondo más oscuro y profesional
             
-            // Cámara ajustada para escala humana
+            // Cámara
             camera = new THREE.PerspectiveCamera(50, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-            camera.position.set(4, 4, 6);
+            camera.position.set(6, 5, 8);
             camera.lookAt(0, 1, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            renderer.shadowMap.enabled = true; // Sombras activadas
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Sombras más suaves
             viewport.appendChild(renderer.domElement);
 
-            // Luces mejoradas para ver las texturas
-            const ambientLight = new THREE.AmbientLight(0x606060);
+            // Luces
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             scene.add(ambientLight);
             
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(5, 10, 7.5);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+            dirLight.position.set(10, 15, 10);
             dirLight.castShadow = true;
+            dirLight.shadow.camera.left = -10;
+            dirLight.shadow.camera.right = 10;
+            dirLight.shadow.camera.top = 10;
+            dirLight.shadow.camera.bottom = -10;
             scene.add(dirLight);
 
-            // Suelo (Plano para recibir sombras)
-            const floorGeo = new THREE.PlaneGeometry(20, 20);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+            // Suelo
+            const floorGeo = new THREE.PlaneGeometry(30, 30);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
-            // Bloqueamos el suelo para que no sea seleccionable ni interactuable
             scene.add(floor);
 
-            const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x333333);
+            const gridHelper = new THREE.GridHelper(30, 30, 0x000000, 0x222222);
             gridHelper.position.y = 0.01;
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
             scene.add(gridHelper);
 
             // Controles
@@ -210,9 +251,8 @@
             generateTextures();
         }
 
-        // --- Generador de Texturas Procedurales Ampliado ---
+        // Generador de Texturas
         function generateTextures() {
-            // 1. Cuadrícula y Ladrillos (Las de antes)
             const cGrid = document.createElement('canvas'); cGrid.width=128; cGrid.height=128;
             const ctx1 = cGrid.getContext('2d'); ctx1.fillStyle='#fff'; ctx1.fillRect(0,0,128,128); ctx1.fillStyle='#ccc'; ctx1.fillRect(0,0,64,64); ctx1.fillRect(64,64,64,64);
             generatedTextures['grid'] = createTex(cGrid);
@@ -221,7 +261,6 @@
             const ctx2 = cBricks.getContext('2d'); ctx2.fillStyle='#a52a2a'; ctx2.fillRect(0,0,128,128); ctx2.fillStyle='#ddd'; ctx2.fillRect(0,60,128,8); ctx2.fillRect(60,0,8,60); ctx2.fillRect(20,68,8,60);
             generatedTextures['bricks'] = createTex(cBricks, 3);
 
-            // 2. Madera (Líneas horizontales)
             const cWood = document.createElement('canvas'); cWood.width=128; cWood.height=128;
             const ctx3 = cWood.getContext('2d');
             ctx3.fillStyle = '#8B5A2B'; ctx3.fillRect(0,0,128,128);
@@ -229,7 +268,6 @@
             for(let i=0; i<128; i+=4) { if(Math.random() > 0.3) { ctx3.fillRect(0, i, 128, Math.random()*2+1); } }
             generatedTextures['wood'] = createTex(cWood);
 
-            // 3. Pasto (Verde con ruido)
             const cGrass = document.createElement('canvas'); cGrass.width=128; cGrass.height=128;
             const ctx4 = cGrass.getContext('2d');
             ctx4.fillStyle = '#4CAF50'; ctx4.fillRect(0,0,128,128);
@@ -237,7 +275,6 @@
             for(let i=0; i<500; i++) { ctx4.fillRect(Math.random()*128, Math.random()*128, 2, 3); }
             generatedTextures['grass'] = createTex(cGrass, 4);
 
-            // 4. Ajedrez
             const cCheck = document.createElement('canvas'); cCheck.width=128; cCheck.height=128;
             const ctx5 = cCheck.getContext('2d');
             for(let x=0; x<4; x++){ for(let y=0; y<4; y++){ ctx5.fillStyle = (x+y)%2 === 0 ? '#111' : '#eee'; ctx5.fillRect(x*32, y*32, 32, 32); } }
@@ -251,11 +288,13 @@
             return tex;
         }
 
-        // --- Creador de Figuras Simples ---
+        // Creador de Figuras Simples
         function addShape(type) {
             let geometry, nameBase;
             if (type === 'cube') { geometry = new THREE.BoxGeometry(1, 1, 1); nameBase = "Cubo"; }
             else if (type === 'sphere') { geometry = new THREE.SphereGeometry(0.5, 32, 16); nameBase = "Esfera"; }
+            else if (type === 'cylinder') { geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); nameBase = "Cilindro"; }
+            else if (type === 'cone') { geometry = new THREE.ConeGeometry(0.5, 1, 32); nameBase = "Cono"; }
 
             const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
             const mesh = new THREE.Mesh(geometry, material);
@@ -268,69 +307,148 @@
             addToScene(mesh);
         }
 
-        // --- Creador de PREFABS (Grupos de objetos) ---
+        // Creador de PREFABS Complejos
         function addPrefab(type) {
-            const group = new THREE.Group(); // Contenedor vacío
+            const group = new THREE.Group(); 
             
+            // --- PERSONAJES ---
             if (type === 'spiderman') {
-                group.name = "Jugador (Spider-Man) " + objectCounter++;
+                group.name = "Spider-Man " + objectCounter++;
                 const matRed = new THREE.MeshStandardMaterial({ color: 0xcc0000 });
                 const matBlue = new THREE.MeshStandardMaterial({ color: 0x0000cc });
                 
-                // Unity scale: 1 unidad = 1 metro. Altura total ~ 1.8m
-                const head = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.25), matRed);
-                head.position.set(0, 1.65, 0);
-                
-                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.6, 0.25), matRed);
-                torso.position.set(0, 1.2, 0);
-
-                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.9, 0.18), matBlue);
-                legL.position.set(-0.12, 0.45, 0);
-                const legR = legL.clone();
-                legR.position.set(0.12, 0.45, 0);
-
-                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), matBlue);
-                armL.position.set(-0.32, 1.15, 0);
-                const armR = armL.clone();
-                armR.position.set(0.32, 1.15, 0);
-
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.25), matRed); head.position.set(0, 1.65, 0);
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.6, 0.25), matRed); torso.position.set(0, 1.2, 0);
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.9, 0.18), matBlue); legL.position.set(-0.12, 0.45, 0);
+                const legR = legL.clone(); legR.position.set(0.12, 0.45, 0);
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), matBlue); armL.position.set(-0.32, 1.15, 0);
+                const armR = armL.clone(); armR.position.set(0.32, 1.15, 0);
                 group.add(head, torso, legL, legR, armL, armR);
             } 
+            else if (type === 'ironman') {
+                group.name = "Iron Man " + objectCounter++;
+                const matRed = new THREE.MeshStandardMaterial({ color: 0xa81111, metalness: 0.8, roughness: 0.2 });
+                const matGold = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.3 });
+                const matGlow = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x88ccff, emissiveIntensity: 1 });
+                
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.32, 0.28), matGold); head.position.set(0, 1.7, 0);
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.65, 0.3), matRed); torso.position.set(0, 1.2, 0);
+                const reactor = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 16), matGlow); 
+                reactor.rotation.x = Math.PI / 2; reactor.position.set(0, 1.3, 0.16);
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.9, 0.2), matGold); legL.position.set(-0.13, 0.45, 0);
+                const legR = legL.clone(); legR.position.set(0.13, 0.45, 0);
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.75, 0.16), matRed); armL.position.set(-0.35, 1.15, 0);
+                const armR = armL.clone(); armR.position.set(0.35, 1.15, 0);
+                group.add(head, torso, reactor, legL, legR, armL, armR);
+            }
+            else if (type === 'hulk') {
+                group.name = "Hulk " + objectCounter++;
+                const matGreen = new THREE.MeshStandardMaterial({ color: 0x2b7a15, roughness: 0.9 });
+                const matPurple = new THREE.MeshStandardMaterial({ color: 0x4a235a }); // Pantalones
+                
+                // Hulk es más grande
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), matGreen); head.position.set(0, 2.3, 0.1);
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.6), matGreen); torso.position.set(0, 1.6, 0);
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.0, 0.35), matPurple); legL.position.set(-0.3, 0.5, 0);
+                const legR = legL.clone(); legR.position.set(0.3, 0.5, 0);
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.1, 0.35), matGreen); armL.position.set(-0.8, 1.5, 0);
+                const armR = armL.clone(); armR.position.set(0.8, 1.5, 0);
+                group.add(head, torso, legL, legR, armL, armR);
+            }
+            else if (type === 'batman') {
+                group.name = "Batman " + objectCounter++;
+                const matSuit = new THREE.MeshStandardMaterial({ color: 0x1c1c1c });
+                const matBelt = new THREE.MeshStandardMaterial({ color: 0xccb000 });
+                
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.35, 0.26), matSuit); head.position.set(0, 1.7, 0);
+                const earsL = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 4), matSuit); earsL.position.set(-0.08, 1.9, 0);
+                const earsR = earsL.clone(); earsR.position.set(0.08, 1.9, 0);
+                const torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.6, 0.26), matSuit); torso.position.set(0, 1.25, 0);
+                const belt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.28), matBelt); belt.position.set(0, 0.95, 0);
+                const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.9, 0.18), matSuit); legL.position.set(-0.12, 0.45, 0);
+                const legR = legL.clone(); legR.position.set(0.12, 0.45, 0);
+                const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.7, 0.15), matSuit); armL.position.set(-0.33, 1.2, 0);
+                const armR = armL.clone(); armR.position.set(0.33, 1.2, 0);
+                const cape = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 1.4), matSuit); cape.position.set(0, 1.1, -0.15); cape.rotation.x = -Math.PI / 12;
+                cape.material.side = THREE.DoubleSide;
+                group.add(head, earsL, earsR, torso, belt, legL, legR, armL, armR, cape);
+            }
+
+            // --- OBJETOS Y ENTORNO ---
             else if (type === 'table') {
                 group.name = "Mesa " + objectCounter++;
                 const matWood = new THREE.MeshStandardMaterial({ map: generatedTextures['wood'] });
-                
-                // Altura estándar mesa 0.75m
-                const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.9), matWood);
-                top.position.set(0, 0.75, 0);
-                
+                const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.05, 0.9), matWood); top.position.set(0, 0.75, 0);
                 const legGeo = new THREE.BoxGeometry(0.08, 0.75, 0.08);
                 const legsPositions = [[-0.7, 0.375, -0.35], [0.7, 0.375, -0.35], [-0.7, 0.375, 0.35], [0.7, 0.375, 0.35]];
-                
                 group.add(top);
-                legsPositions.forEach(pos => {
-                    const leg = new THREE.Mesh(legGeo, matWood);
-                    leg.position.set(...pos);
-                    group.add(leg);
-                });
+                legsPositions.forEach(pos => { const leg = new THREE.Mesh(legGeo, matWood); leg.position.set(...pos); group.add(leg); });
+            }
+            else if (type === 'chair') {
+                group.name = "Silla " + objectCounter++;
+                const matWood = new THREE.MeshStandardMaterial({ map: generatedTextures['wood'] });
+                const seat = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.05, 0.45), matWood); seat.position.set(0, 0.45, 0);
+                const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.05), matWood); backrest.position.set(0, 0.7, -0.2);
+                const legGeo = new THREE.BoxGeometry(0.04, 0.45, 0.04);
+                const legsPositions = [[-0.18, 0.225, -0.18], [0.18, 0.225, -0.18], [-0.18, 0.225, 0.18], [0.18, 0.225, 0.18]];
+                group.add(seat, backrest);
+                legsPositions.forEach(pos => { const leg = new THREE.Mesh(legGeo, matWood); leg.position.set(...pos); group.add(leg); });
+            }
+            else if (type === 'door') {
+                group.name = "Puerta " + objectCounter++;
+                const matWood = new THREE.MeshStandardMaterial({ map: generatedTextures['wood'] });
+                const matMetal = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8 });
+                const frameGeo = new THREE.BoxGeometry(0.1, 2.1, 0.15);
+                const frameL = new THREE.Mesh(frameGeo, matWood); frameL.position.set(-0.5, 1.05, 0);
+                const frameR = new THREE.Mesh(frameGeo, matWood); frameR.position.set(0.5, 1.05, 0);
+                const frameT = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.15), matWood); frameT.position.set(0, 2.15, 0);
+                const door = new THREE.Mesh(new THREE.BoxGeometry(0.96, 2.05, 0.05), matWood); door.position.set(0, 1.05, 0);
+                const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04), matMetal); knob.position.set(0.35, 1.0, 0.04);
+                const knob2 = new THREE.Mesh(new THREE.SphereGeometry(0.04), matMetal); knob2.position.set(0.35, 1.0, -0.04);
+                group.add(frameL, frameR, frameT, door, knob, knob2);
+            }
+            else if (type === 'window') {
+                group.name = "Ventana " + objectCounter++;
+                const matFrame = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                const matGlass = new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4, roughness: 0.1, metalness: 0.8 });
+                
+                const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), matFrame); frameL.position.set(-0.55, 0.6, 0);
+                const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), matFrame); frameR.position.set(0.55, 0.6, 0);
+                const frameB = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), matFrame); frameB.position.set(0, 0.05, 0);
+                const frameT = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.1), matFrame); frameT.position.set(0, 1.15, 0);
+                const frameM = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.0, 0.05), matFrame); frameM.position.set(0, 0.6, 0);
+                const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), matGlass); glass.position.set(0, 0.6, 0); glass.material.side = THREE.DoubleSide;
+                
+                group.add(frameL, frameR, frameB, frameT, frameM, glass);
+                group.position.y = 0.8; // Las ventanas van arriba
+            }
+            else if (type === 'wall') {
+                group.name = "Pared " + objectCounter++;
+                const matWall = new THREE.MeshStandardMaterial({ map: generatedTextures['bricks'] });
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(3, 2.5, 0.2), matWall);
+                wall.position.set(0, 1.25, 0);
+                group.add(wall);
+            }
+            else if (type === 'tree') {
+                group.name = "Árbol " + objectCounter++;
+                const matTrunk = new THREE.MeshStandardMaterial({ color: 0x5c4033 });
+                const matLeaves = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+                
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.5), matTrunk); trunk.position.set(0, 0.75, 0);
+                const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.2, 7, 7), matLeaves); leaves.position.set(0, 2.2, 0);
+                const leaves2 = new THREE.Mesh(new THREE.SphereGeometry(0.8, 6, 6), matLeaves); leaves2.position.set(0.6, 1.8, 0.4);
+                const leaves3 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 6, 6), matLeaves); leaves3.position.set(-0.5, 2.0, -0.5);
+                group.add(trunk, leaves, leaves2, leaves3);
             }
             else if (type === 'tv') {
                 group.name = "Televisor " + objectCounter++;
                 const matBlack = new THREE.MeshStandardMaterial({ color: 0x111111 });
-                const matScreen = new THREE.MeshStandardMaterial({ color: 0x4444ff, emissive: 0x111133 }); // Brilla un poco
+                const matScreen = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.1, metalness: 0.8 }); 
                 
-                const screen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), matBlack);
-                screen.position.set(0, 0.45, 0);
-                
-                const display = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.65), matScreen);
-                display.position.set(0, 0.45, 0.026); // Ligeramente frente a la pantalla
-                
-                const stand = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.2), matBlack);
-                stand.position.set(0, 0.025, 0);
-                
-                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), matBlack);
-                neck.position.set(0, 0.08, 0);
-
+                const screen = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), matBlack); screen.position.set(0, 0.45, 0);
+                const display = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.65), matScreen); display.position.set(0, 0.45, 0.026);
+                const stand = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.2), matBlack); stand.position.set(0, 0.025, 0);
+                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.05), matBlack); neck.position.set(0, 0.08, 0);
                 group.add(screen, display, stand, neck);
             }
             else if (type === 'flower') {
@@ -340,35 +458,22 @@
                 const matCenter = new THREE.MeshStandardMaterial({ color: 0xFFD700 });
                 const matPetal = new THREE.MeshStandardMaterial({ color: 0xFF1493 });
 
-                const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.1, 0.3), matPot);
-                pot.position.set(0, 0.15, 0);
-
-                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), matStem);
-                stem.position.set(0, 0.5, 0);
-
-                const center = new THREE.Mesh(new THREE.SphereGeometry(0.08), matCenter);
-                center.position.set(0, 0.75, 0);
-
+                const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.1, 0.3), matPot); pot.position.set(0, 0.15, 0);
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), matStem); stem.position.set(0, 0.5, 0);
+                const center = new THREE.Mesh(new THREE.SphereGeometry(0.08), matCenter); center.position.set(0, 0.75, 0);
                 group.add(pot, stem, center);
 
-                // Generar pétalos en círculo
                 for(let i=0; i<6; i++) {
                     const petal = new THREE.Mesh(new THREE.SphereGeometry(0.06), matPetal);
                     const angle = (i / 6) * Math.PI * 2;
                     petal.position.set(Math.cos(angle)*0.12, 0.75, Math.sin(angle)*0.12);
-                    // Aplanar el pétalo un poco
-                    petal.scale.set(1, 0.2, 1);
-                    petal.lookAt(0, 0.75, 0);
+                    petal.scale.set(1, 0.2, 1); petal.lookAt(0, 0.75, 0);
                     group.add(petal);
                 }
             }
 
-            // Habilitar sombras para todos los hijos del prefab
-            group.children.forEach(child => { child.castShadow = true; });
-            group.userData.isPrefab = true; // Etiqueta para saber que es un grupo al seleccionarlo
-
-            // Colocar prefabs en el centro de la vista
-            group.position.set(0, 0, 0);
+            group.children.forEach(child => { child.castShadow = true; child.receiveShadow = true; });
+            group.userData.isPrefab = true; 
             addToScene(group);
         }
 
@@ -379,7 +484,7 @@
             selectObject(object);
         }
 
-        // --- Interacción y Raycaster Actualizado para Prefabs ---
+        // Raycaster e Interacción
         function onPointerDown(event) {
             if(transformControl.axis !== null) return; 
 
@@ -388,14 +493,10 @@
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            
-            // Buscar intersección con todos los hijos también (recursive = true)
             const intersects = raycaster.intersectObjects(objects, true);
 
             if (intersects.length > 0) {
                 let hitObject = intersects[0].object;
-                
-                // Si lo que tocamos es parte de un Prefab (Grupo), seleccionamos el padre (el Prefab completo)
                 while(hitObject.parent && hitObject.parent.type === "Group") {
                     hitObject = hitObject.parent;
                 }
@@ -419,7 +520,6 @@
             updateInspectorUI();
         }
 
-        // ... (El resto de funciones de teclado, borrar y UI se mantienen iguales) ...
         function onKeyDown(event) {
             if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
             const key = event.key.toLowerCase();
@@ -441,7 +541,6 @@
             transformControl.detach();
             scene.remove(selectedObject);
             
-            // Limpieza de memoria (Si es un grupo, limpia a los hijos)
             if(selectedObject.userData.isPrefab) {
                 selectedObject.children.forEach(c => {
                     if (c.geometry) c.geometry.dispose();
@@ -461,11 +560,20 @@
 
         function duplicateSelected() {
             if (!selectedObject) return;
-            const clone = selectedObject.clone();
-            clone.name = selectedObject.name + " (Copia)";
             
-            if (clone.userData.isSimple && clone.material) { clone.material = selectedObject.material.clone(); }
-            
+            let clone;
+            if(selectedObject.userData.isPrefab) {
+                // Clonado profundo para grupos complejos
+                clone = selectedObject.clone();
+                clone.children.forEach(child => {
+                    if(child.material) child.material = child.material.clone();
+                });
+            } else {
+                clone = selectedObject.clone();
+                if (clone.material) clone.material = selectedObject.material.clone();
+            }
+
+            clone.name = selectedObject.name.replace(/ \d+$/, '') + " " + objectCounter++;
             clone.position.x += 1;
             addToScene(clone);
         }
@@ -481,7 +589,6 @@
                 empty.style.display = 'none';
                 document.getElementById('ins-name').textContent = selectedObject.name;
                 
-                // Mostrar panel de materiales SÓLO si es figura simple. Los Prefabs tienen muchos materiales mezclados.
                 if (selectedObject.userData.isSimple && selectedObject.material) {
                     matGroup.style.display = 'block';
                     warning.style.display = 'none';
@@ -489,7 +596,7 @@
                     document.getElementById('mat-texture').value = selectedObject.userData.textureType || 'none';
                 } else if (selectedObject.userData.isPrefab) {
                     matGroup.style.display = 'none';
-                    warning.style.display = 'block'; // Aviso de que no se puede editar color de prefab aquí
+                    warning.style.display = 'block';
                 }
 
                 updateInspectorValues();
