@@ -3,23 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Unity Web Editor</title>
+    <title>Mini Unity Web Editor - Versión Mejorada</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #383838; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        
         /* Barra de herramientas superior */
-        #toolbar { background-color: #282828; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; }
-        button { background-color: #444; color: white; border: 1px solid #222; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-size: 13px; }
+        #toolbar { background-color: #282828; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; }
+        button { background-color: #444; color: white; border: 1px solid #222; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-size: 13px; transition: 0.2s;}
         button:hover { background-color: #555; }
         button.active { background-color: #007acc; border-color: #005a9e; }
+        .divider { width: 1px; background-color: #555; margin: 0 5px; }
+
         /* Layout principal */
         #main { display: flex; flex: 1; overflow: hidden; }
-        /* Jerarquía (Barra lateral izquierda) */
-        #hierarchy { width: 250px; background-color: #333; border-right: 1px solid #1a1a1a; padding: 10px; overflow-y: auto; }
+        
+        /* Paneles laterales */
+        .panel { width: 260px; background-color: #333; padding: 10px; overflow-y: auto; box-sizing: border-box; }
+        #hierarchy { border-right: 1px solid #1a1a1a; }
+        #inspector { border-left: 1px solid #1a1a1a; }
+        
         .hierarchy-item { padding: 5px; cursor: pointer; margin-bottom: 2px; border-radius: 3px; font-size: 14px; }
         .hierarchy-item:hover { background-color: #444; }
         .hierarchy-item.selected { background-color: #007acc; }
+        
         /* Vista de Escena (Centro) */
         #viewport { flex: 1; position: relative; outline: none; }
+
+        /* Estilos del Inspector */
+        .inspector-group { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #444; }
+        .inspector-title { font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #bbb; }
+        .transform-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 12px; }
+        .transform-label { width: 60px; }
+        .xyz-input { display: flex; gap: 5px; flex: 1; }
+        .xyz-input input { width: 100%; background: #222; border: 1px solid #111; color: white; padding: 3px; border-radius: 2px; text-align: center; }
+        .xyz-input input:focus { outline: 1px solid #007acc; }
+        
+        input[type="color"] { width: 100%; height: 30px; border: none; background: none; cursor: pointer; }
+        select { width: 100%; background: #222; color: white; border: 1px solid #111; padding: 5px; }
     </style>
     <!-- Importar Three.js y controles desde CDN -->
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
@@ -32,27 +52,91 @@
         <button id="btn-translate" class="active" onclick="setMode('translate')">Mover (W)</button>
         <button id="btn-rotate" onclick="setMode('rotate')">Rotar (E)</button>
         <button id="btn-scale" onclick="setMode('scale')">Escalar (R)</button>
-        <div style="width: 20px;"></div> <!-- Espaciador -->
-        <button onclick="addCube()">+ Cubo</button>
-        <button onclick="addSphere()">+ Esfera</button>
-        <button onclick="addLight()">+ Luz</button>
+        <div class="divider"></div>
+        <button onclick="addShape('cube')">+ Cubo</button>
+        <button onclick="addShape('sphere')">+ Esfera</button>
+        <button onclick="addShape('rect')">+ Rectángulo</button>
+        <button onclick="addShape('pyramid')">+ Pirámide</button>
+        <div class="divider"></div>
+        <button onclick="duplicateSelected()" title="Ctrl + D">Duplicar (Ctrl+D)</button>
+        <button onclick="deleteSelected()" style="background-color: #8b0000;" title="Suprimir o Backspace">Borrar (Supr)</button>
     </div>
 
     <div id="main">
-        <div id="hierarchy">
+        <!-- Jerarquía -->
+        <div id="hierarchy" class="panel">
             <h4 style="margin-top: 0;">Jerarquía</h4>
             <div id="hierarchy-list"></div>
         </div>
+        
+        <!-- Vista 3D -->
         <div id="viewport"></div>
+
+        <!-- Inspector -->
+        <div id="inspector" class="panel">
+            <h4 style="margin-top: 0;">Inspector</h4>
+            <div id="inspector-content" style="display: none;">
+                <h3 id="ins-name" style="margin-top: 0; color: #fff;">Objeto</h3>
+                
+                <div class="inspector-group">
+                    <div class="inspector-title">Transform</div>
+                    
+                    <div class="transform-row">
+                        <span class="transform-label">Position</span>
+                        <div class="xyz-input">
+                            <input type="number" id="pos-x" step="0.1" onchange="updateObjectFromUI()">
+                            <input type="number" id="pos-y" step="0.1" onchange="updateObjectFromUI()">
+                            <input type="number" id="pos-z" step="0.1" onchange="updateObjectFromUI()">
+                        </div>
+                    </div>
+                    
+                    <div class="transform-row">
+                        <span class="transform-label">Rotation</span>
+                        <div class="xyz-input">
+                            <input type="number" id="rot-x" step="1" onchange="updateObjectFromUI()">
+                            <input type="number" id="rot-y" step="1" onchange="updateObjectFromUI()">
+                            <input type="number" id="rot-z" step="1" onchange="updateObjectFromUI()">
+                        </div>
+                    </div>
+
+                    <div class="transform-row">
+                        <span class="transform-label">Scale</span>
+                        <div class="xyz-input">
+                            <input type="number" id="sca-x" step="0.1" onchange="updateObjectFromUI()">
+                            <input type="number" id="sca-y" step="0.1" onchange="updateObjectFromUI()">
+                            <input type="number" id="sca-z" step="0.1" onchange="updateObjectFromUI()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inspector-group" id="material-group">
+                    <div class="inspector-title">Material (MeshRenderer)</div>
+                    <div class="transform-row">
+                        <span class="transform-label">Color</span>
+                        <input type="color" id="mat-color" oninput="updateMaterialColor()">
+                    </div>
+                    <div class="transform-row" style="margin-top: 10px;">
+                        <span class="transform-label">Textura</span>
+                        <select id="mat-texture" onchange="updateMaterialTexture()">
+                            <option value="none">Ninguna (Color sólido)</option>
+                            <option value="grid">Cuadrícula</option>
+                            <option value="bricks">Ladrillos Básicos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="inspector-empty" style="color: #888; font-size: 13px;">
+                Selecciona un objeto para ver sus propiedades.
+            </div>
+        </div>
     </div>
 
     <script>
-        // Variables globales
-        let camera, scene, renderer;
-        let orbit, transformControl;
-        let raycaster, mouse;
-        const objects = []; // Objetos interactuables
+        let camera, scene, renderer, orbit, transformControl, raycaster, mouse;
+        const objects = [];
         let objectCounter = 1;
+        let selectedObject = null;
+        let generatedTextures = {}; // Almacena texturas generadas por código
 
         init();
         animate();
@@ -60,88 +144,99 @@
         function init() {
             const viewport = document.getElementById('viewport');
 
-            // 1. Escena y Cámara
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x282828);
             
             camera = new THREE.PerspectiveCamera(50, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-            camera.position.set(5, 5, 5);
+            camera.position.set(6, 6, 6);
             camera.lookAt(0, 0, 0);
 
-            // 2. Renderizador
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(viewport.clientWidth, viewport.clientHeight);
             viewport.appendChild(renderer.domElement);
 
-            // 3. Luces y Entorno (Grid)
-            scene.add(new THREE.AmbientLight(0x404040, 2)); // Luz base
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            // Luces y Grid
+            scene.add(new THREE.AmbientLight(0x505050));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(5, 10, 7.5);
             scene.add(dirLight);
 
-            const gridHelper = new THREE.GridHelper(10, 10, 0x555555, 0x444444);
+            const gridHelper = new THREE.GridHelper(20, 20, 0x555555, 0x444444);
             scene.add(gridHelper);
 
-            // 4. Controles (Cámara y Herramientas)
+            // Controles
             orbit = new THREE.OrbitControls(camera, renderer.domElement);
             orbit.update();
 
             transformControl = new THREE.TransformControls(camera, renderer.domElement);
-            transformControl.addEventListener('dragging-changed', function (event) {
-                // Desactiva la órbita de la cámara mientras usas la herramienta de mover/rotar
-                orbit.enabled = !event.value;
+            transformControl.addEventListener('dragging-changed', (event) => orbit.enabled = !event.value);
+            // Actualizar el inspector en tiempo real mientras se arrastra el gizmo
+            transformControl.addEventListener('change', () => {
+                if (selectedObject) updateInspectorValues();
             });
             scene.add(transformControl);
 
-            // 5. Raycaster (Para hacer clic y seleccionar)
+            // Selección
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             viewport.addEventListener('mousedown', onPointerDown);
 
-            // 6. Atajos de teclado (Estilo Unity)
-            window.addEventListener('keydown', function (event) {
-                switch (event.key.toLowerCase()) {
-                    case 'w': setMode('translate'); break;
-                    case 'e': setMode('rotate'); break;
-                    case 'r': setMode('scale'); break;
-                }
-            });
-
-            // Ajuste al cambiar tamaño de ventana
+            // Teclado
+            window.addEventListener('keydown', onKeyDown);
             window.addEventListener('resize', onWindowResize);
+
+            // Generar texturas de prueba
+            generateTextures();
+        }
+
+        // --- Generador de Texturas Procedurales ---
+        // Evitamos problemas de CORS al cargar imágenes externas creando texturas con Canvas HTML5
+        function generateTextures() {
+            // Textura Cuadrícula
+            const canvas1 = document.createElement('canvas');
+            canvas1.width = 128; canvas1.height = 128;
+            const ctx1 = canvas1.getContext('2d');
+            ctx1.fillStyle = '#ffffff'; ctx1.fillRect(0, 0, 128, 128);
+            ctx1.fillStyle = '#cccccc'; ctx1.fillRect(0, 0, 64, 64); ctx1.fillRect(64, 64, 64, 64);
+            const texGrid = new THREE.CanvasTexture(canvas1);
+            texGrid.wrapS = THREE.RepeatWrapping; texGrid.wrapT = THREE.RepeatWrapping;
+            texGrid.repeat.set(2, 2);
+            generatedTextures['grid'] = texGrid;
+
+            // Textura Ladrillos (Simulada)
+            const canvas2 = document.createElement('canvas');
+            canvas2.width = 128; canvas2.height = 128;
+            const ctx2 = canvas2.getContext('2d');
+            ctx2.fillStyle = '#a52a2a'; ctx2.fillRect(0, 0, 128, 128);
+            ctx2.fillStyle = '#dddddd'; 
+            ctx2.fillRect(0, 60, 128, 8); // horizontal
+            ctx2.fillRect(60, 0, 8, 60);  // vertical 1
+            ctx2.fillRect(20, 68, 8, 60); // vertical 2
+            const texBricks = new THREE.CanvasTexture(canvas2);
+            texBricks.wrapS = THREE.RepeatWrapping; texBricks.wrapT = THREE.RepeatWrapping;
+            texBricks.repeat.set(2, 2);
+            generatedTextures['bricks'] = texBricks;
         }
 
         // --- Funciones de creación ---
-        function addCube() {
-            const geometry = new THREE.BoxGeometry();
+        function addShape(type) {
+            let geometry;
+            let nameBase = "";
+            
+            if (type === 'cube') { geometry = new THREE.BoxGeometry(); nameBase = "Cubo"; }
+            else if (type === 'sphere') { geometry = new THREE.SphereGeometry(0.6, 32, 16); nameBase = "Esfera"; }
+            else if (type === 'rect') { geometry = new THREE.BoxGeometry(2, 0.5, 1); nameBase = "Rectángulo"; }
+            else if (type === 'pyramid') { geometry = new THREE.ConeGeometry(0.6, 1.2, 4); nameBase = "Pirámide"; }
+
             const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
             const mesh = new THREE.Mesh(geometry, material);
-            mesh.name = "Cubo " + objectCounter++;
-            mesh.position.y = 0.5;
-            addToScene(mesh);
-        }
+            mesh.name = `${nameBase} ${objectCounter++}`;
+            mesh.position.y = type === 'rect' ? 0.25 : 0.6;
+            
+            // Aseguramos que la textura por defecto sea 'none'
+            mesh.userData.textureType = 'none';
 
-        function addSphere() {
-            const geometry = new THREE.SphereGeometry(0.6, 32, 16);
-            const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.name = "Esfera " + objectCounter++;
-            mesh.position.y = 0.6;
             addToScene(mesh);
-        }
-
-        function addLight() {
-            const light = new THREE.PointLight(0xffffff, 1, 10);
-            // Representación visual de la luz
-            const sphereSize = 0.2;
-            const pointLightHelper = new THREE.Mesh(
-                new THREE.SphereGeometry(sphereSize, 8, 8),
-                new THREE.MeshBasicMaterial({color: 0xffff00, wireframe: true})
-            );
-            light.add(pointLightHelper);
-            light.name = "Luz " + objectCounter++;
-            light.position.set(0, 2, 0);
-            addToScene(light);
         }
 
         function addToScene(object) {
@@ -151,9 +246,69 @@
             selectObject(object);
         }
 
+        // --- Atajos de Teclado (Borrar / Duplicar) ---
+        function onKeyDown(event) {
+            const key = event.key.toLowerCase();
+            
+            // Prevenir atajos si estamos escribiendo en los inputs del inspector
+            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "SELECT") return;
+
+            if (key === 'w') setMode('translate');
+            if (key === 'e') setMode('rotate');
+            if (key === 'r') setMode('scale');
+            
+            if (event.key === 'Delete' || event.key === 'Backspace') {
+                deleteSelected();
+            }
+            
+            if (key === 'd' && event.ctrlKey) {
+                event.preventDefault(); // Evita que el navegador abra marcadores
+                duplicateSelected();
+            }
+        }
+
+        function deleteSelected() {
+            if (!selectedObject) return;
+            
+            // Quitar de los controles
+            transformControl.detach();
+            
+            // Quitar de la escena
+            scene.remove(selectedObject);
+            
+            // Liberar memoria de geometría y material
+            if (selectedObject.geometry) selectedObject.geometry.dispose();
+            if (selectedObject.material) selectedObject.material.dispose();
+            
+            // Quitar del array
+            const index = objects.indexOf(selectedObject);
+            if (index > -1) objects.splice(index, 1);
+            
+            selectedObject = null;
+            updateHierarchy();
+            updateInspectorUI();
+        }
+
+        function duplicateSelected() {
+            if (!selectedObject) return;
+            
+            const clone = selectedObject.clone();
+            clone.name = selectedObject.name + " (Copia)";
+            
+            // Clonar material para que cambiar color a uno no afecte al otro
+            if (clone.material) {
+                clone.material = selectedObject.material.clone();
+            }
+            
+            // Desplazar ligeramente para que se note
+            clone.position.x += 0.5;
+            clone.position.z += 0.5;
+            
+            addToScene(clone);
+        }
+
         // --- Lógica de Selección e Interfaz ---
         function onPointerDown(event) {
-            // Prevenir selección si estamos haciendo clic en los controles de transformación
             if(transformControl.axis !== null) return; 
 
             const rect = renderer.domElement.getBoundingClientRect();
@@ -171,21 +326,115 @@
         }
 
         function selectObject(object) {
+            selectedObject = object;
             transformControl.attach(object);
             updateHierarchySelection(object);
+            updateInspectorUI();
         }
 
         function deselectAll() {
+            selectedObject = null;
             transformControl.detach();
             updateHierarchySelection(null);
+            updateInspectorUI();
         }
 
         function setMode(mode) {
             transformControl.setMode(mode);
-            document.getElementById('btn-translate').classList.remove('active');
-            document.getElementById('btn-rotate').classList.remove('active');
-            document.getElementById('btn-scale').classList.remove('active');
+            ['translate', 'rotate', 'scale'].forEach(m => document.getElementById('btn-' + m).classList.remove('active'));
             document.getElementById('btn-' + mode).classList.add('active');
+        }
+
+        // --- Lógica del Inspector (Lado Derecho) ---
+        function updateInspectorUI() {
+            const content = document.getElementById('inspector-content');
+            const empty = document.getElementById('inspector-empty');
+            const matGroup = document.getElementById('material-group');
+
+            if (selectedObject) {
+                content.style.display = 'block';
+                empty.style.display = 'none';
+                document.getElementById('ins-name').textContent = selectedObject.name;
+                
+                // Mostrar panel de materiales solo si el objeto tiene material
+                if (selectedObject.material) {
+                    matGroup.style.display = 'block';
+                    document.getElementById('mat-color').value = '#' + selectedObject.material.color.getHexString();
+                    document.getElementById('mat-texture').value = selectedObject.userData.textureType || 'none';
+                } else {
+                    matGroup.style.display = 'none';
+                }
+
+                updateInspectorValues();
+            } else {
+                content.style.display = 'none';
+                empty.style.display = 'block';
+            }
+        }
+
+        function updateInspectorValues() {
+            if (!selectedObject) return;
+            
+            // Posición
+            document.getElementById('pos-x').value = selectedObject.position.x.toFixed(2);
+            document.getElementById('pos-y').value = selectedObject.position.y.toFixed(2);
+            document.getElementById('pos-z').value = selectedObject.position.z.toFixed(2);
+
+            // Rotación (Convertimos de Radianes de Three.js a Grados estilo Unity)
+            document.getElementById('rot-x').value = THREE.MathUtils.radToDeg(selectedObject.rotation.x).toFixed(1);
+            document.getElementById('rot-y').value = THREE.MathUtils.radToDeg(selectedObject.rotation.y).toFixed(1);
+            document.getElementById('rot-z').value = THREE.MathUtils.radToDeg(selectedObject.rotation.z).toFixed(1);
+
+            // Escala
+            document.getElementById('sca-x').value = selectedObject.scale.x.toFixed(2);
+            document.getElementById('sca-y').value = selectedObject.scale.y.toFixed(2);
+            document.getElementById('sca-z').value = selectedObject.scale.z.toFixed(2);
+        }
+
+        function updateObjectFromUI() {
+            if (!selectedObject) return;
+
+            // Leer inputs de Posición
+            selectedObject.position.set(
+                parseFloat(document.getElementById('pos-x').value),
+                parseFloat(document.getElementById('pos-y').value),
+                parseFloat(document.getElementById('pos-z').value)
+            );
+
+            // Leer inputs de Rotación (Convertimos Grados a Radianes)
+            selectedObject.rotation.set(
+                THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-x').value)),
+                THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-y').value)),
+                THREE.MathUtils.degToRad(parseFloat(document.getElementById('rot-z').value))
+            );
+
+            // Leer inputs de Escala
+            selectedObject.scale.set(
+                parseFloat(document.getElementById('sca-x').value),
+                parseFloat(document.getElementById('sca-y').value),
+                parseFloat(document.getElementById('sca-z').value)
+            );
+        }
+
+        function updateMaterialColor() {
+            if (selectedObject && selectedObject.material) {
+                const hex = document.getElementById('mat-color').value;
+                selectedObject.material.color.set(hex);
+            }
+        }
+
+        function updateMaterialTexture() {
+            if (selectedObject && selectedObject.material) {
+                const type = document.getElementById('mat-texture').value;
+                selectedObject.userData.textureType = type;
+
+                if (type === 'none') {
+                    selectedObject.material.map = null;
+                } else {
+                    selectedObject.material.map = generatedTextures[type];
+                }
+                selectedObject.material.needsUpdate = true;
+            }
         }
 
         // --- Lógica de Jerarquía (UI Lateral) ---
@@ -197,7 +446,6 @@
                 div.className = 'hierarchy-item';
                 div.textContent = obj.name;
                 div.onclick = () => selectObject(obj);
-                // Relacionar el elemento DOM con el objeto 3D
                 div.dataset.uuid = obj.uuid; 
                 list.appendChild(div);
             });
